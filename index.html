@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Tools Suite</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base Light Theme */
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --input-bg: #ffffff;
+            --table-head: #f8fafc;
+        }
+
+        /* Dark Theme Variables */
+        [data-theme="dark"] {
+            --primary: #6366f1;
+            --primary-hover: #818cf8;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --input-bg: #0f172a;
+            --table-head: #0f172a;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .container {
+            background: var(--card-bg);
+            max-width: 700px;
+            width: 100%;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05), 0 4px 6px rgba(0, 0, 0, 0.02);
+            position: relative;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Header & Dark Mode Toggle */
+        .header-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            width: auto;
+            margin: 0;
+        }
+        
+        .theme-toggle:hover {
+            background-color: var(--border);
+        }
+
+        /* Tabs System */
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 25px;
+        }
+
+        .tab-btn {
+            background: none;
+            color: var(--text-muted);
+            border: none;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            width: auto;
+            border-radius: 0;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-btn:hover:not(.active) {
+            color: var(--text-main);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Forms & Inputs */
+        .input-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 18px;
+        }
+
+        label {
+            margin-bottom: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px 16px;
+            font-size: 1rem;
+            font-family: inherit;
+            background-color: var(--input-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+        }
+
+        button.action-btn {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary);
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+
+        button.action-btn:hover { background-color: var(--primary-hover); }
+        button.action-btn:active { transform: scale(0.98); }
+
+        button.secondary-btn {
+            background-color: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            margin-top: 15px;
+        }
+        button.secondary-btn:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        /* Tracker Specifics */
+        .progress-container {
+            width: 100%;
+            background-color: var(--border);
+            border-radius: 100px;
+            height: 24px;
+            margin-top: 25px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            text-align: center;
+            line-height: 24px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            width: 0%;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease;
+            background-image: linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent);
+            background-size: 1rem 1rem;
+        }
+
+        .summary {
+            font-size: 1.1rem;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+        .summary span { color: var(--primary); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+            margin-top: 20px;
+            display: none;
+        }
+        th, td {
+            border-bottom: 1px solid var(--border);
+            padding: 12px 10px;
+            text-align: center;
+        }
+        th {
+            background-color: var(--table-head);
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+        tr:last-child td { border-bottom: none; }
+        td.highlight { font-weight: 700; color: #10b981; }
+
+        /* Chart Specifics */
+        #chart-container {
+            position: relative;
+            height: 350px;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        /* Percent Change Specifics */
+        .pc-subtitle {
+            margin: 0 0 20px 0;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+        .input-wrapper { position: relative; display: flex; align-items: center; }
+        .unit { position: absolute; right: 16px; color: var(--text-muted); font-weight: bold; pointer-events: none; }
+        
+        input.calculated {
+            color: var(--primary);
+            background-color: rgba(79, 70, 229, 0.05);
+            border-color: rgba(79, 70, 229, 0.3);
+            font-weight: 600;
+        }
+        [data-theme="dark"] input.calculated {
+            background-color: rgba(99, 102, 241, 0.1);
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+
+        .difference-display {
+            background-color: var(--table-head);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 24px;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 500;
+            border: 1px dashed var(--border);
+        }
+        .difference-display span { font-weight: 700; font-size: 1.1rem; }
+        .diff-positive { color: #10b981; }
+        .diff-negative { color: #ef4444; }
+
+        .formula-box {
+            background-color: var(--table-head);
+            padding: 16px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: "Times New Roman", Times, serif;
+            font-size: 1.1rem;
+            margin-top: 24px;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+        .fraction { display: inline-flex; flex-direction: column; align-items: center; margin-left: 8px; }
+        .numerator { border-bottom: 1px solid var(--text-main); padding: 0 6px 2px 6px; }
+        .denominator { padding: 2px 6px 0 6px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header-wrapper">
+            <h1>Financial Tools</h1>
+            <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙</button>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('tracker', this)">Goal Tracker</button>
+            <button class="tab-btn" onclick="switchTab('growth', this)">Growth Projection</button>
+            <button class="tab-btn" onclick="switchTab('percent', this)">Percent Change</button>
+        </div>
+
+        <!-- ================= TAB 1: GOAL TRACKER ================= -->
+        <div id="tracker" class="tab-content active">
+            <div class="input-row">
+                <div class="input-group" style="margin-bottom:0;">
+                    <label for="initialAmount">Initial Amount ($)</label>
+                    <input type="text" inputmode="decimal" id="initialAmount" placeholder="e.g. 1,000" class="comma-input" required>
+                </div>
+                <div class="input-group" style="margin-bottom:0;">
+                    <label for="targetAmount">Target Amount ($)</label>
+                    <input type="text" inputmode="decimal" id="targetAmount" placeholder="e.g. 5,000" class="comma-input" required>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="futureDate">Target Date</label>
+                <input type="date" id="futureDate" required>
+            </div>
+
+            <button class="action-btn" id="calculateTracker">Calculate Plan</button>
+
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar" id="progressBar">0%</div>
+            </div>
+            <div class="summary" id="summary"></div>
+
+            <table id="resultTable">
+                <thead>
+                    <tr>
+                        <th>Time Frame</th>
+                        <th>Time Left</th>
+                        <th>Savings Required</th>
+                        <th>% of Initial</th>
+                    </tr>
+                </thead>
+                <tbody id="resultBody"></tbody>
+            </table>
+        </div>
+
+        <!-- ================= TAB 2: GROWTH PROJECTION ================= -->
+        <div id="growth" class="tab-content">
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="growthInitial">Initial Value ($)</label>
+                    <input type="text" inputmode="decimal" id="growthInitial" placeholder="e.g. 1,000" class="comma-input" required>
+                </div>
+                <div class="input-group">
+                    <label for="growthPercentage">Weekly Growth (%)</label>
+                    <input type="number" step="any" id="growthPercentage" placeholder="e.g. 5" required>
+                </div>
+                <div class="input-group">
+                    <label for="numberOfWeeks">Number of Weeks</label>
+                    <input type="number" id="numberOfWeeks" placeholder="e.g. 10" min="1" required>
+                </div>
+            </div>
+
+            <button class="action-btn" onclick="generateChart()">Generate Chart</button>
+
+            <div id="chart-container">
+                <canvas id="growthChart"></canvas>
+            </div>
+            
+            <button class="action-btn secondary-btn" onclick="downloadChart()" id="downloadBtn" style="display:none;">📸 Download Chart</button>
+        </div>
+
+        <!-- ================= TAB 3: PERCENT CHANGE ================= -->
+        <div id="percent" class="tab-content">
+            <p class="pc-subtitle">Enter any two values to get the 3rd. The correct value is automatically calculated as you type.</p>
+
+            <div class="input-group">
+                <label>Initial Value</label>
+                <input type="text" id="pc-initial" placeholder="0" autocomplete="off" />
+            </div>
+
+            <div class="input-group">
+                <label>Final Value</label>
+                <input type="text" id="pc-final" placeholder="0" autocomplete="off" />
+            </div>
+
+            <div class="input-group">
+                <label>Percent Change</label>
+                <div class="input-wrapper">
+                    <input type="text" id="pc-percent" placeholder="0" autocomplete="off" />
+                    <span class="unit">%</span>
+                </div>
+            </div>
+
+            <div class="difference-display" id="diff-container" style="display: none;">
+                Absolute Difference: <span id="diff-value">0</span>
+            </div>
+
+            <div class="formula-box">
+                <span>% change = 100 &times; </span>
+                <div class="fraction">
+                    <div class="numerator">final &minus; initial</div>
+                    <div class="denominator">|initial|</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- THEME TOGGLE LOGIC ---
+        function toggleTheme() {
+            const body = document.documentElement;
+            const toggleBtn = document.getElementById('themeToggle');
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
+                toggleBtn.textContent = '🌙';
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                toggleBtn.textContent = '☀️';
+            }
+            if(growthChart) {
+                generateChart(); // Re-render chart colors
+            }
+        }
+
+        // --- TAB SWITCHING LOGIC ---
+        function switchTab(tabId, btnElement) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            btnElement.classList.add('active');
+        }
+
+        // --- COMMA FORMATTING (For Tab 1 & 2 Live Typing) ---
+        function formatInputWithCommas(event) {
+            let input = event.target;
+            let value = input.value.replace(/[^0-9.]/g, '');
+            const parts = value.split('.');
+            if (parts.length > 2) { value = parts[0] + '.' + parts.slice(1).join(''); }
+
+            if (value !== '') {
+                const finalParts = value.split('.');
+                let integerPart = finalParts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                let decimalPart = finalParts.length > 1 ? '.' + finalParts[1] : '';
+                input.value = integerPart + decimalPart;
+            } else {
+                input.value = '';
+            }
+        }
+
+        document.querySelectorAll('.comma-input').forEach(input => {
+            input.addEventListener('input', formatInputWithCommas);
+        });
+
+        const formatCurrency = (num) => num.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+
+        // ================= TAB 1: GOAL TRACKER SCRIPT =================
+        function setProgressBarColor(percent) {
+            const progressBar = document.getElementById("progressBar");
+            if (percent < 25) progressBar.style.backgroundColor = "#ef4444";
+            else if (percent < 50) progressBar.style.backgroundColor = "#f97316";
+            else if (percent < 75) progressBar.style.backgroundColor = "#eab308";
+            else progressBar.style.backgroundColor = "#22c55e";
+        }
+
+        document.getElementById("calculateTracker").addEventListener("click", function() {
+            const initialAmountStr = document.getElementById("initialAmount").value.replace(/,/g, '');
+            const targetAmountStr = document.getElementById("targetAmount").value.replace(/,/g, '');
+            const futureDateStr = document.getElementById("futureDate").value;
+
+            if (!initialAmountStr || !targetAmountStr || !futureDateStr) return alert("Please fill out all fields.");
+
+            const initialAmount = parseFloat(initialAmountStr);
+            const targetAmount = parseFloat(targetAmountStr);
+
+            if (initialAmount < 0 || targetAmount <= 0) return alert("Amounts must be positive.");
+            if (targetAmount <= initialAmount) return alert("Target amount must be greater than initial.");
+
+            const [year, month, day] = futureDateStr.split('-');
+            const futureDate = new Date(year, month - 1, day);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); 
+
+            const timeDifference = futureDate - today; 
+            if (timeDifference <= 0) return alert("Date must be in the future.");
+
+            const daysUntilTarget = Math.round(timeDifference / (1000 * 60 * 60 * 24)); 
+            const weeksUntilTarget = daysUntilTarget / 7; 
+            const monthsUntilTarget = daysUntilTarget / (365.25 / 12); 
+            const totalToAcquire = targetAmount - initialAmount;
+
+            const dailySavings = totalToAcquire / daysUntilTarget;
+            const weeklySavings = dailySavings * 7;
+            const monthlySavings = dailySavings * (365.25 / 12);
+
+            const progressPercentage = Math.min((initialAmount / targetAmount) * 100, 100);
+            
+            let totalPct = "∞", moPct = "∞", wkPct = "∞", dyPct = "∞";
+            if (initialAmount > 0) {
+                totalPct = ((totalToAcquire / initialAmount) * 100).toFixed(1) + "%";
+                moPct = ((monthlySavings / initialAmount) * 100).toFixed(2) + "%";
+                wkPct = ((weeklySavings / initialAmount) * 100).toFixed(2) + "%";
+                dyPct = ((dailySavings / initialAmount) * 100).toFixed(2) + "%";
+            }
+
+            document.getElementById("progressContainer").style.display = "block";
+            setTimeout(() => {
+                const pb = document.getElementById("progressBar");
+                pb.style.width = progressPercentage + "%";
+                pb.textContent = progressPercentage > 5 ? Math.round(progressPercentage) + "%" : "";
+                setProgressBarColor(progressPercentage);
+            }, 10);
+
+            document.getElementById("summary").innerHTML = `
+                Goal: Acquire <span>${formatCurrency(totalToAcquire)}</span> <br>
+                <span style="font-size: 0.85rem; color: var(--text-muted);">(Total Increase: ${totalPct})</span>
+            `;
+
+            document.getElementById("resultBody").innerHTML = `
+                <tr><td>Monthly</td><td>${monthsUntilTarget.toFixed(1)} mo</td><td class="highlight">${formatCurrency(monthlySavings)}</td><td>${moPct}</td></tr>
+                <tr><td>Weekly</td><td>${weeksUntilTarget.toFixed(1)} wk</td><td class="highlight">${formatCurrency(weeklySavings)}</td><td>${wkPct}</td></tr>
+                <tr><td>Daily</td><td>${daysUntilTarget} d</td><td class="highlight">${formatCurrency(dailySavings)}</td><td>${dyPct}</td></tr>
+            `;
+            document.getElementById("resultTable").style.display = "table";
+        });
+
+
+        // ================= TAB 2: GROWTH PROJECTION SCRIPT =================
+        let growthChart;
+
+        function generateChart() {
+            const initialValueStr = document.getElementById('growthInitial').value.replace(/,/g, '');
+            const initialValue = parseFloat(initialValueStr);
+            const growthPercentage = parseFloat(document.getElementById('growthPercentage').value) / 100;
+            const numberOfWeeks = parseInt(document.getElementById('numberOfWeeks').value);
+
+            if (isNaN(initialValue) || isNaN(growthPercentage) || isNaN(numberOfWeeks) || numberOfWeeks < 1) {
+                alert("Please enter valid numbers for all chart fields.");
+                return;
+            }
+
+            const weeks = Array.from({ length: numberOfWeeks + 1 }, (_, i) => i); 
+            const values = weeks.map(week => initialValue * Math.pow(1 + growthPercentage, week));
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const labels = weeks.map(week => {
+                const fDate = new Date(today);
+                fDate.setDate(today.getDate() + week * 7);
+                return fDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); 
+            });
+
+            const ctx = document.getElementById('growthChart').getContext('2d');
+            if (growthChart) growthChart.destroy();
+
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const textColor = isDark ? '#94a3b8' : '#64748b';
+            const gridColor = isDark ? '#334155' : '#f1f5f9';
+
+            let gradient = ctx.createLinearGradient(0, 0, 0, 350);
+            gradient.addColorStop(0, 'rgba(79, 70, 229, 0.4)');
+            gradient.addColorStop(1, 'rgba(79, 70, 229, 0.0)');
+
+            growthChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Projected Value',
+                        data: values,
+                        borderColor: '#4f46e5',
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        fill: true,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#4f46e5',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: gridColor, drawBorder: false },
+                            ticks: {
+                                callback: val => '$' + val.toLocaleString(),
+                                font: { family: "'Inter', sans-serif" },
+                                color: textColor
+                            }
+                        },
+                        x: {
+                            grid: { display: false, drawBorder: false },
+                            ticks: {
+                                font: { family: "'Inter', sans-serif" },
+                                color: textColor
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(30, 41, 59, 0.95)',
+                            titleFont: { family: "'Inter', sans-serif", size: 13 },
+                            bodyFont: { family: "'Inter', sans-serif", size: 13, weight: 'bold' },
+                            padding: 12,
+                            displayColors: false,
+                            callbacks: {
+                                title: items => `Date: ${items[0].label}`,
+                                label: item => {
+                                    const val = item.raw;
+                                    let diff = item.dataIndex > 0 ? val - values[item.dataIndex - 1] : 0;
+                                    let txt = `Value: ${formatCurrency(val)}`;
+                                    if (diff) txt += ` (+${formatCurrency(diff)})`;
+                                    return txt;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            document.getElementById('downloadBtn').style.display = 'block';
+        }
+
+        function downloadChart() {
+            const link = document.createElement('a');
+            link.download = 'financial-growth-projection.png';
+            link.href = document.getElementById('growthChart').toDataURL('image/png');
+            link.click();
+        }
+
+        // ================= TAB 3: PERCENT CHANGE SCRIPT =================
+        const pcInputs = {
+            initial: document.getElementById('pc-initial'),
+            final: document.getElementById('pc-final'),
+            percent: document.getElementById('pc-percent')
+        };
+        const diffContainer = document.getElementById('diff-container');
+        const diffValueDisplay = document.getElementById('diff-value');
+        
+        let pcEditHistory = ['initial', 'final'];
+
+        function parsePcNumber(str) {
+            if (!str) return NaN;
+            return parseFloat(str.replace(/,/g, '').replace(/\s/g, ''));
+        }
+
+        function formatPcNumber(num) {
+            if (isNaN(num)) return '';
+            if (num === -0) num = 0;
+            return parseFloat(num.toFixed(4)).toLocaleString('en-US');
+        }
+
+        function calculatePc() {
+            let i = parsePcNumber(pcInputs.initial.value);
+            let f = parsePcNumber(pcInputs.final.value);
+            let p = parsePcNumber(pcInputs.percent.value);
+
+            const recentEdits = pcEditHistory.slice(0, 2);
+            let targetField = ['initial', 'final', 'percent'].find(field => !recentEdits.includes(field));
+
+            if (targetField === 'percent') {
+                if (!isNaN(i) && !isNaN(f)) {
+                    if (i !== 0) {
+                        p = ((f - i) / Math.abs(i)) * 100;
+                        pcInputs.percent.value = formatPcNumber(p);
+                    } else pcInputs.percent.value = ''; 
+                } else pcInputs.percent.value = '';
+            } else if (targetField === 'final') {
+                if (!isNaN(i) && !isNaN(p)) {
+                    f = i + (p / 100) * Math.abs(i);
+                    pcInputs.final.value = formatPcNumber(f);
+                } else pcInputs.final.value = '';
+            } else if (targetField === 'initial') {
+                if (!isNaN(f) && !isNaN(p)) {
+                    i = f / (1 + (p / 100));
+                    pcInputs.initial.value = formatPcNumber(i);
+                } else pcInputs.initial.value = '';
+            }
+
+            // Apply highlighting to calculated field
+            Object.keys(pcInputs).forEach(key => {
+                if (key === targetField && pcInputs[key].value !== '') {
+                    pcInputs[key].classList.add('calculated');
+                } else {
+                    pcInputs[key].classList.remove('calculated');
+                }
+            });
+
+            // Calculate Difference
+            i = parsePcNumber(pcInputs.initial.value);
+            f = parsePcNumber(pcInputs.final.value);
+            
+            if (!isNaN(i) && !isNaN(f)) {
+                const diff = f - i;
+                diffContainer.style.display = 'block';
+                
+                let sign = diff > 0 ? '+' : (diff < 0 ? '-' : '');
+                diffValueDisplay.textContent = `${sign}${formatPcNumber(Math.abs(diff))}`;
+                
+                diffValueDisplay.className = '';
+                if (diff > 0) diffValueDisplay.classList.add('diff-positive');
+                if (diff < 0) diffValueDisplay.classList.add('diff-negative');
+            } else {
+                diffContainer.style.display = 'none';
+            }
+        }
+
+        Object.keys(pcInputs).forEach(key => {
+            pcInputs[key].addEventListener('input', (e) => {
+                pcEditHistory = pcEditHistory.filter(item => item !== key);
+                pcEditHistory.unshift(key);
+                calculatePc();
+            });
+
+            pcInputs[key].addEventListener('blur', (e) => {
+                const num = parsePcNumber(e.target.value);
+                if (!isNaN(num)) e.target.value = formatPcNumber(num);
+            });
+            
+            pcInputs[key].addEventListener('focus', (e) => {
+                const num = parsePcNumber(e.target.value);
+                if (!isNaN(num)) e.target.value = num;
+            });
+        });
+
+        // --- INIT DEFAULT DATA FOR CHART ON LOAD ---
+        window.onload = function() {
+            document.getElementById('growthInitial').value = '1,000';
+            document.getElementById('growthPercentage').value = '5';
+            document.getElementById('numberOfWeeks').value = '10';
+            generateChart();
+        };
+    </script>
+</body>
+</html>
