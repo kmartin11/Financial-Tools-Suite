@@ -419,29 +419,6 @@
             background-color: #3b82f6;
         }
 
-        .partner-box {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            background-color: rgba(79, 70, 229, 0.05);
-            border: 1px solid rgba(79, 70, 229, 0.15);
-            border-radius: 8px;
-            padding: 12px;
-            font-size: 0.775rem;
-            line-height: 1.4;
-            color: var(--text-main);
-        }
-
-        [data-theme="dark"] .partner-box {
-            background-color: rgba(99, 102, 241, 0.08);
-            border-color: rgba(99, 102, 241, 0.2);
-        }
-
-        .partner-icon {
-            font-size: 1.5rem;
-            flex-shrink: 0;
-        }
-
         /* Segmented Toggles */
         .segment-control {
             display: flex;
@@ -501,8 +478,43 @@
             </div>
 
             <div class="input-group">
-                <label for="futureDate">Target Date</label>
-                <input type="date" id="futureDate" required>
+                <label>Calculate By</label>
+                <div class="segment-control">
+                    <button type="button" class="segment-btn active" id="trackerModeDateBtn" onclick="setTrackerMode('date')">Target Date</button>
+                    <button type="button" class="segment-btn" id="trackerModeContribBtn" onclick="setTrackerMode('contribution')">Recurring Contribution</button>
+                </div>
+            </div>
+
+            <div id="trackerDateMode">
+                <div class="input-group">
+                    <label for="futureDate">Target Date</label>
+                    <input type="date" id="futureDate">
+                </div>
+            </div>
+
+            <div id="trackerContribMode" style="display:none;">
+                <div class="input-row">
+                    <div class="input-group" style="margin-bottom:0;">
+                        <label for="contribAmount">Contribution Amount ($)</label>
+                        <input type="text" inputmode="decimal" id="contribAmount" placeholder="e.g. 200" class="comma-input">
+                    </div>
+                    <div class="input-group" style="margin-bottom:0;">
+                        <label>Frequency</label>
+                        <div class="segment-control">
+                            <button type="button" class="segment-btn active" id="freqWeeklyBtn" onclick="setContribFrequency('weekly')">Weekly</button>
+                            <button type="button" class="segment-btn" id="freqBiweeklyBtn" onclick="setContribFrequency('biweekly')">Bi-Weekly</button>
+                            <button type="button" class="segment-btn" id="freqMonthlyBtn" onclick="setContribFrequency('monthly')">Monthly</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-group" style="margin-bottom: 0;">
+                    <label for="contribApy">Interest Rate / APY (%) — optional, like a CD</label>
+                    <div class="input-wrapper">
+                        <input type="number" step="0.01" id="contribApy" placeholder="e.g. 3.33 (leave blank for 0%)">
+                        <span class="unit">%</span>
+                    </div>
+                </div>
             </div>
 
             <button class="action-btn" id="calculateTracker">Calculate Plan</button>
@@ -523,6 +535,37 @@
                 </thead>
                 <tbody id="resultBody"></tbody>
             </table>
+
+            <div class="cd-breakdown" id="contribBreakdown" style="display:none; margin-top:20px;">
+                <div class="cd-breakdown-title">Contribution Plan Summary</div>
+                <div class="cd-breakdown-row">
+                    <span>Contributing</span>
+                    <span id="contribAmountDisplay" style="font-weight:600;">$0.00 / week</span>
+                </div>
+                <div class="cd-breakdown-row">
+                    <span>Contributions needed</span>
+                    <span id="contribCount" style="font-weight:600;">0</span>
+                </div>
+                <div class="cd-breakdown-row">
+                    <span>Estimated time to goal</span>
+                    <span id="contribTimeToGoal" style="font-weight:600;">--</span>
+                </div>
+                <div class="cd-breakdown-row">
+                    <span>Estimated completion date</span>
+                    <span id="contribCompletionDate" style="font-weight:600;">--</span>
+                </div>
+                <div class="cd-breakdown-row" id="contribInterestRow" style="display:none;">
+                    <span style="display: flex; align-items: center;">
+                        <span class="color-indicator indicator-green"></span>
+                        Interest earned
+                    </span>
+                    <span id="contribInterestEarned" style="font-weight:600;">$0.00</span>
+                </div>
+                <div class="cd-breakdown-row" style="font-weight: 700; border-top: 1px solid var(--border); margin-top: 5px; padding-top: 10px;">
+                    <span>Final balance</span>
+                    <span id="contribFinalBalance">$0.00</span>
+                </div>
+            </div>
         </div>
 
         <!-- ================= TAB 2: GROWTH PROJECTION ================= -->
@@ -654,8 +697,6 @@
                             <span id="cdTotalInterest">$0.00</span>
                         </div>
                     </div>
-
-                    
                 </div>
             </div>
         </div>
@@ -712,6 +753,30 @@
         const formatCurrency = (num) => num.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 
         // ================= TAB 1: GOAL TRACKER SCRIPT =================
+        let trackerMode = 'date';
+        let contribFrequency = 'weekly';
+
+        function setTrackerMode(mode) {
+            trackerMode = mode;
+            document.getElementById('trackerModeDateBtn').classList.toggle('active', mode === 'date');
+            document.getElementById('trackerModeContribBtn').classList.toggle('active', mode === 'contribution');
+            document.getElementById('trackerDateMode').style.display = mode === 'date' ? 'block' : 'none';
+            document.getElementById('trackerContribMode').style.display = mode === 'contribution' ? 'block' : 'none';
+
+            // Reset any previously shown results when switching modes
+            document.getElementById('progressContainer').style.display = 'none';
+            document.getElementById('summary').innerHTML = '';
+            document.getElementById('resultTable').style.display = 'none';
+            document.getElementById('contribBreakdown').style.display = 'none';
+        }
+
+        function setContribFrequency(freq) {
+            contribFrequency = freq;
+            document.getElementById('freqWeeklyBtn').classList.toggle('active', freq === 'weekly');
+            document.getElementById('freqBiweeklyBtn').classList.toggle('active', freq === 'biweekly');
+            document.getElementById('freqMonthlyBtn').classList.toggle('active', freq === 'monthly');
+        }
+
         function setProgressBarColor(percent) {
             const progressBar = document.getElementById("progressBar");
             if (percent < 25) progressBar.style.backgroundColor = "#ef4444";
@@ -721,6 +786,14 @@
         }
 
         document.getElementById("calculateTracker").addEventListener("click", function() {
+            if (trackerMode === 'date') {
+                calcByDate();
+            } else {
+                calcByContribution();
+            }
+        });
+
+        function calcByDate() {
             const initialAmountStr = document.getElementById("initialAmount").value.replace(/,/g, '');
             const targetAmountStr = document.getElementById("targetAmount").value.replace(/,/g, '');
             const futureDateStr = document.getElementById("futureDate").value;
@@ -778,8 +851,99 @@
                 <tr><td>Weekly</td><td>${weeksUntilTarget.toFixed(1)} wk</td><td class="highlight">${formatCurrency(weeklySavings)}</td><td>${wkPct}</td></tr>
                 <tr><td>Daily</td><td>${daysUntilTarget} d</td><td class="highlight">${formatCurrency(dailySavings)}</td><td>${dyPct}</td></tr>
             `;
+            document.getElementById("contribBreakdown").style.display = "none";
             document.getElementById("resultTable").style.display = "table";
-        });
+        }
+
+        function calcByContribution() {
+            const initialAmountStr = document.getElementById("initialAmount").value.replace(/,/g, '');
+            const targetAmountStr = document.getElementById("targetAmount").value.replace(/,/g, '');
+            const contribAmountStr = document.getElementById("contribAmount").value.replace(/,/g, '');
+            const apyStr = document.getElementById("contribApy").value;
+
+            if (!initialAmountStr || !targetAmountStr || !contribAmountStr) return alert("Please fill out all fields.");
+
+            const initialAmount = parseFloat(initialAmountStr);
+            const targetAmount = parseFloat(targetAmountStr);
+            const contribAmount = parseFloat(contribAmountStr);
+            const apy = parseFloat(apyStr) || 0;
+
+            if (initialAmount < 0 || targetAmount <= 0 || contribAmount <= 0) return alert("Amounts must be positive.");
+            if (apy < 0) return alert("Interest rate can't be negative.");
+            if (targetAmount <= initialAmount) return alert("Target amount must be greater than initial.");
+
+            const freqDays = contribFrequency === 'weekly' ? 7 : (contribFrequency === 'biweekly' ? 14 : (365.25 / 12));
+            const freqLabel = contribFrequency === 'weekly' ? 'week' : (contribFrequency === 'biweekly' ? '2 weeks' : 'month');
+
+            // Effective growth applied each period
+            const periodRate = Math.pow(1 + (apy / 100), freqDays / 365.25) - 1;
+
+            let balance = initialAmount;
+            let numberOfContributions = 0;
+            let totalContributed = 0;
+            const MAX_PERIODS = 200000; // safety cap
+
+            while (balance < targetAmount && numberOfContributions < MAX_PERIODS) {
+                balance += contribAmount;
+                totalContributed += contribAmount;
+                balance *= (1 + periodRate);
+                numberOfContributions++;
+            }
+
+            if (numberOfContributions >= MAX_PERIODS) {
+                return alert("This goal isn't reachable in a reasonable time frame with these numbers. Try a larger contribution or a higher rate.");
+            }
+
+            // Adjust calendar timeline based on immediate payment (Day 0) logic
+            const totalDays = Math.round((numberOfContributions - 1) * freqDays);
+            const finalBalance = balance;
+            const interestEarned = Math.max(0, finalBalance - initialAmount - totalContributed);
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const completionDate = new Date(today);
+            completionDate.setDate(today.getDate() + totalDays);
+
+            const monthsToGoal = totalDays / (365.25 / 12);
+            let timeText;
+            if (totalDays === 0) {
+                timeText = "Immediate (Day 0)";
+            } else if (totalDays < 60) {
+                timeText = `${totalDays} day${totalDays === 1 ? '' : 's'}`;
+            } else if (monthsToGoal < 24) {
+                timeText = `${monthsToGoal.toFixed(1)} months`;
+            } else {
+                timeText = `${(monthsToGoal / 12).toFixed(1)} years`;
+            }
+
+            const progressPercentage = Math.min((initialAmount / targetAmount) * 100, 100);
+
+            document.getElementById("progressContainer").style.display = "block";
+            setTimeout(() => {
+                const pb = document.getElementById("progressBar");
+                pb.style.width = progressPercentage + "%";
+                pb.textContent = progressPercentage > 5 ? Math.round(progressPercentage) + "%" : "";
+                setProgressBarColor(progressPercentage);
+            }, 10);
+
+            const totalToAcquire = targetAmount - initialAmount;
+            const rateNote = apy > 0 ? ` at ${apy}% APY` : '';
+            document.getElementById("summary").innerHTML = `
+                Goal: Acquire <span>${formatCurrency(totalToAcquire)}</span> <br>
+                <span style="font-size: 0.85rem; color: var(--text-muted);">by contributing ${formatCurrency(contribAmount)} every ${freqLabel}${rateNote}</span>
+            `;
+
+            document.getElementById("contribAmountDisplay").textContent = `${formatCurrency(contribAmount)} / ${freqLabel}`;
+            document.getElementById("contribCount").textContent = numberOfContributions;
+            document.getElementById("contribTimeToGoal").textContent = timeText;
+            document.getElementById("contribCompletionDate").textContent = completionDate.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+            document.getElementById("contribInterestRow").style.display = apy > 0 ? "flex" : "none";
+            document.getElementById("contribInterestEarned").textContent = formatCurrency(interestEarned);
+            document.getElementById("contribFinalBalance").textContent = formatCurrency(finalBalance);
+
+            document.getElementById("resultTable").style.display = "none";
+            document.getElementById("contribBreakdown").style.display = "block";
+        }
 
 
         // ================= TAB 2: GROWTH PROJECTION SCRIPT =================
@@ -886,9 +1050,22 @@
         }
 
         function downloadChart() {
+            const originalCanvas = document.getElementById('growthChart');
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            
+            // Render on temporary canvas with a solid background matching the current theme
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = originalCanvas.width;
+            tempCanvas.height = originalCanvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            tempCtx.fillStyle = isDark ? '#1e293b' : '#ffffff';
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            tempCtx.drawImage(originalCanvas, 0, 0);
+            
             const link = document.createElement('a');
             link.download = 'financial-growth-projection.png';
-            link.href = document.getElementById('growthChart').toDataURL('image/png');
+            link.href = tempCanvas.toDataURL('image/png');
             link.click();
         }
 
@@ -936,7 +1113,23 @@
                 } else pcInputs.final.value = '';
             } else if (targetField === 'initial') {
                 if (!isNaN(f) && !isNaN(p)) {
-                    i = f / (1 + (p / 100));
+                    const pDec = p / 100;
+                    let calculatedInitial = NaN;
+                    
+                    // Determine math correctness considering potential negative bounds
+                    if (1 + pDec !== 0) {
+                        const testPos = f / (1 + pDec);
+                        if (testPos >= 0) {
+                            calculatedInitial = testPos;
+                        }
+                    }
+                    if (isNaN(calculatedInitial) && (1 - pDec !== 0)) {
+                        const testNeg = f / (1 - pDec);
+                        if (testNeg < 0) {
+                            calculatedInitial = testNeg;
+                        }
+                    }
+                    i = calculatedInitial;
                     pcInputs.initial.value = formatPcNumber(i);
                 } else pcInputs.initial.value = '';
             }
@@ -1004,7 +1197,6 @@
             const periodValue = parseFloat(document.getElementById('cdPeriod').value) || 0;
             const apy = parseFloat(document.getElementById('cdApy').value) || 0;
 
-            // FDIC/National average rate benchmark (~1.00% APY baseline yield)
             const NATIONAL_AVERAGE_APY = 0.993; 
 
             // Convert period to fractional years
@@ -1040,14 +1232,20 @@
             const textColor = isDark ? '#94a3b8' : '#64748b';
             const gridColor = isDark ? '#334155' : '#e2e8f0';
 
-            const steps = Math.min(Math.max(parseInt(periodValue) || 1, 1), 60);
+            const totalPeriod = parseInt(periodValue) || 1;
+            const maxSteps = 60;
+            const stepSize = totalPeriod > maxSteps ? totalPeriod / maxSteps : 1;
+            const steps = totalPeriod > maxSteps ? maxSteps : totalPeriod;
+
             const labels = [];
             const yourProgress = [];
             const natProgress = [];
 
             for (let i = 0; i <= steps; i++) {
-                labels.push(periodType === 'months' ? `Month ${i}` : `Year ${i}`);
-                const t = periodType === 'months' ? (i / 12) : i;
+                const currentPeriodVal = i * stepSize;
+                const roundedVal = Math.round(currentPeriodVal * 10) / 10;
+                labels.push(periodType === 'months' ? `Mo ${roundedVal}` : `Yr ${roundedVal}`);
+                const t = periodType === 'months' ? (currentPeriodVal / 12) : currentPeriodVal;
 
                 const yEarn = deposit * Math.pow(1 + (userApy / 100), t) - deposit;
                 const nEarn = deposit * Math.pow(1 + (natApy / 100), t) - deposit;
