@@ -100,8 +100,8 @@
             background: none;
             color: var(--text-muted);
             border: none;
-            padding: 12px 20px;
-            font-size: 1rem;
+            padding: 12px 14px;
+            font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
             border-bottom: 3px solid transparent;
@@ -313,6 +313,163 @@
         .fraction { display: inline-flex; flex-direction: column; align-items: center; margin-left: 8px; }
         .numerator { border-bottom: 1px solid var(--text-main); padding: 0 6px 2px 6px; }
         .denominator { padding: 2px 6px 0 6px; }
+
+        /* CD Calculator Layout Styles */
+        .cd-calc-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 24px;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 650px) {
+            .cd-calc-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .cd-inputs-panel {
+            background-color: var(--table-head);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .cd-results-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .cd-balance-box {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+
+        .cd-balance-symbol {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+            align-self: flex-start;
+            margin-top: 4px;
+        }
+
+        .cd-balance-amount {
+            font-size: 2.3rem;
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: -0.02em;
+        }
+
+        .cd-balance-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: -4px;
+        }
+
+        .cd-chart-wrapper {
+            position: relative;
+            height: 180px;
+            width: 100%;
+        }
+
+        .cd-breakdown {
+            background-color: var(--table-head);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .cd-breakdown-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text-main);
+        }
+
+        .cd-breakdown-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            font-size: 0.85rem;
+        }
+
+        .cd-breakdown-row:not(:last-child) {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .color-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            margin-right: 8px;
+        }
+
+        .indicator-green {
+            background-color: #10b981;
+        }
+
+        .indicator-blue {
+            background-color: #3b82f6;
+        }
+
+        .partner-box {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            background-color: rgba(79, 70, 229, 0.05);
+            border: 1px solid rgba(79, 70, 229, 0.15);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.775rem;
+            line-height: 1.4;
+            color: var(--text-main);
+        }
+
+        [data-theme="dark"] .partner-box {
+            background-color: rgba(99, 102, 241, 0.08);
+            border-color: rgba(99, 102, 241, 0.2);
+        }
+
+        .partner-icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        /* Segmented Toggles */
+        .segment-control {
+            display: flex;
+            background-color: var(--border);
+            border-radius: 8px;
+            padding: 3px;
+        }
+
+        .segment-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+            flex: 1;
+            margin: 0;
+            width: auto;
+        }
+
+        .segment-btn.active {
+            background-color: var(--card-bg);
+            color: var(--primary);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
     </style>
 </head>
 <body>
@@ -327,6 +484,7 @@
             <button class="tab-btn active" onclick="switchTab('tracker', this)">Goal Tracker</button>
             <button class="tab-btn" onclick="switchTab('growth', this)">Growth Projection</button>
             <button class="tab-btn" onclick="switchTab('percent', this)">Percent Change</button>
+            <button class="tab-btn" onclick="switchTab('cd-calc', this)">CD Calculator</button>
         </div>
 
         <!-- ================= TAB 1: GOAL TRACKER ================= -->
@@ -427,6 +585,80 @@
                 </div>
             </div>
         </div>
+
+        <!-- ================= TAB 4: CD CALCULATOR ================= -->
+        <div id="cd-calc" class="tab-content">
+            <div class="cd-calc-grid">
+                <!-- Left Column: Inputs -->
+                <div class="cd-inputs-panel">
+                    <div class="input-group">
+                        <label for="cdDeposit">Initial Deposit</label>
+                        <input type="text" inputmode="decimal" id="cdDeposit" placeholder="e.g. 10,000" class="comma-input" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Over a period of</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="number" id="cdPeriod" value="1" min="1" style="width: 80px; flex-shrink: 0;" required>
+                            <div class="segment-control" style="flex-grow: 1;">
+                                <button type="button" class="segment-btn active" id="cdBtnMonths" onclick="setCDPeriodType('months')">Months</button>
+                                <button type="button" class="segment-btn" id="cdBtnYears" onclick="setCDPeriodType('years')">Years</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label for="cdApy">APY</label>
+                        <div class="input-wrapper">
+                            <input type="number" step="0.01" id="cdApy" placeholder="3.33" required>
+                            <span class="unit">%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Outputs -->
+                <div class="cd-results-panel">
+                    <div>
+                        <div class="cd-balance-box">
+                            <span class="cd-balance-symbol">$</span>
+                            <span class="cd-balance-amount" id="cdTotalBalance">10,000.00</span>
+                        </div>
+                        <div class="cd-balance-label">Your total balance</div>
+                    </div>
+
+                    <div class="cd-chart-wrapper">
+                        <canvas id="cdChart"></canvas>
+                    </div>
+
+                    <div class="cd-breakdown">
+                        <div class="cd-breakdown-title" id="cdPeriodLabelText">Interest earned by month 1:</div>
+                        
+                        <div class="cd-breakdown-row">
+                            <span style="display: flex; align-items: center;">
+                                <span class="color-indicator indicator-green"></span>
+                                Your earnings
+                            </span>
+                            <span id="cdYourEarnings" style="font-weight: 600;">$0.00</span>
+                        </div>
+                        
+                        <div class="cd-breakdown-row">
+                            <span style="display: flex; align-items: center;">
+                                <span class="color-indicator indicator-blue"></span>
+                                National Average
+                            </span>
+                            <span id="cdNatEarnings" style="font-weight: 600;">$0.00</span>
+                        </div>
+
+                        <div class="cd-breakdown-row" style="font-weight: 700; border-top: 1px solid var(--border); margin-top: 5px; padding-top: 10px;">
+                            <span>Total interest earned</span>
+                            <span id="cdTotalInterest">$0.00</span>
+                        </div>
+                    </div>
+
+                    
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -444,6 +676,7 @@
             if(growthChart) {
                 generateChart(); // Re-render chart colors
             }
+            calculateCD(); // Re-render CD chart colors
         }
 
         // --- TAB SWITCHING LOGIC ---
@@ -754,12 +987,160 @@
             });
         });
 
+        // ================= TAB 4: CD CALCULATOR SCRIPT =================
+        let cdPeriodType = 'months';
+        let cdChart;
+
+        function setCDPeriodType(type) {
+            cdPeriodType = type;
+            document.getElementById('cdBtnMonths').classList.toggle('active', type === 'months');
+            document.getElementById('cdBtnYears').classList.toggle('active', type === 'years');
+            calculateCD();
+        }
+
+        function calculateCD() {
+            const depositStr = document.getElementById('cdDeposit').value.replace(/,/g, '');
+            const deposit = parseFloat(depositStr) || 0;
+            const periodValue = parseFloat(document.getElementById('cdPeriod').value) || 0;
+            const apy = parseFloat(document.getElementById('cdApy').value) || 0;
+
+            // FDIC/National average rate benchmark (~1.00% APY baseline yield)
+            const NATIONAL_AVERAGE_APY = 0.993; 
+
+            // Convert period to fractional years
+            const t = cdPeriodType === 'months' ? (periodValue / 12) : periodValue;
+
+            // Compound formula: FV = P * (1 + APY/100)^t
+            const fv = deposit * Math.pow(1 + (apy / 100), t);
+            const earnings = Math.max(0, fv - deposit);
+
+            const fvNat = deposit * Math.pow(1 + (NATIONAL_AVERAGE_APY / 100), t);
+            const earningsNat = Math.max(0, fvNat - deposit);
+
+            // Display results
+            document.getElementById('cdTotalBalance').textContent = fv.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById('cdYourEarnings').textContent = formatCurrency(earnings);
+            document.getElementById('cdNatEarnings').textContent = formatCurrency(earningsNat);
+            document.getElementById('cdTotalInterest').textContent = formatCurrency(earnings);
+
+            // Handle labels dynamically
+            const singularType = cdPeriodType === 'months' ? 'month' : 'year';
+            const labelStr = `Interest earned by ${singularType} ${periodValue}:`;
+            document.getElementById('cdPeriodLabelText').textContent = labelStr;
+
+            // Generate/Update CD comparison Chart.js
+            updateCDChart(deposit, apy, NATIONAL_AVERAGE_APY, periodValue, cdPeriodType);
+        }
+
+        function updateCDChart(deposit, userApy, natApy, periodValue, periodType) {
+            const ctx = document.getElementById('cdChart').getContext('2d');
+            if (cdChart) cdChart.destroy();
+
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const textColor = isDark ? '#94a3b8' : '#64748b';
+            const gridColor = isDark ? '#334155' : '#e2e8f0';
+
+            const steps = Math.min(Math.max(parseInt(periodValue) || 1, 1), 60);
+            const labels = [];
+            const yourProgress = [];
+            const natProgress = [];
+
+            for (let i = 0; i <= steps; i++) {
+                labels.push(periodType === 'months' ? `Month ${i}` : `Year ${i}`);
+                const t = periodType === 'months' ? (i / 12) : i;
+
+                const yEarn = deposit * Math.pow(1 + (userApy / 100), t) - deposit;
+                const nEarn = deposit * Math.pow(1 + (natApy / 100), t) - deposit;
+
+                yourProgress.push(parseFloat(yEarn.toFixed(2)));
+                natProgress.push(parseFloat(nEarn.toFixed(2)));
+            }
+
+            cdChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Your Earnings',
+                            data: yourProgress,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                            borderWidth: 3,
+                            pointBackgroundColor: '#10b981',
+                            pointRadius: steps <= 15 ? 4 : 1,
+                            tension: 0.2,
+                            fill: true
+                        },
+                        {
+                            label: 'National Average',
+                            data: natProgress,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                            borderWidth: 3,
+                            pointBackgroundColor: '#3b82f6',
+                            pointRadius: steps <= 15 ? 4 : 1,
+                            tension: 0.2,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            grid: { color: gridColor, drawBorder: false },
+                            ticks: {
+                                callback: val => '$' + val.toLocaleString(),
+                                color: textColor,
+                                font: { family: "'Inter', sans-serif" }
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: textColor,
+                                font: { family: "'Inter', sans-serif" },
+                                maxTicksLimit: 6
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(30, 41, 59, 0.95)',
+                            titleFont: { family: "'Inter', sans-serif", size: 12 },
+                            bodyFont: { family: "'Inter', sans-serif", size: 12, weight: 'bold' },
+                            padding: 10,
+                            displayColors: true,
+                            callbacks: {
+                                label: item => `${item.dataset.label}: ${formatCurrency(item.raw)}`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Add change events to recalculate CD automatically
+        const cdInputElements = ['cdDeposit', 'cdPeriod', 'cdApy'];
+        cdInputElements.forEach(id => {
+            document.getElementById(id).addEventListener('input', calculateCD);
+        });
+
         // --- INIT DEFAULT DATA FOR CHART ON LOAD ---
         window.onload = function() {
             document.getElementById('growthInitial').value = '1,000';
             document.getElementById('growthPercentage').value = '5';
             document.getElementById('numberOfWeeks').value = '10';
             generateChart();
+
+            // Setup CD default initial values
+            document.getElementById('cdDeposit').value = '10,000';
+            document.getElementById('cdPeriod').value = '1';
+            document.getElementById('cdApy').value = '3.33';
+            calculateCD();
         };
     </script>
 </body>
