@@ -283,6 +283,26 @@
             border-color: rgba(99, 102, 241, 0.4);
         }
 
+        .pd-hint {
+            margin: -8px 0 16px 0;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        .pd-btn-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 4px;
+        }
+
+        .pd-small-btn {
+            width: auto;
+            flex: 1;
+            padding: 10px;
+            font-size: 0.85rem;
+            margin-top: 0;
+        }
+
         .difference-display {
             background-color: var(--table-head);
             border-radius: 8px;
@@ -643,6 +663,13 @@
                     <label for="pd-val2">Second Value (V₂)</label>
                     <input type="text" inputmode="decimal" id="pd-val2" placeholder="e.g. 125" autocomplete="off" class="comma-input" />
                 </div>
+            </div>
+
+            <p class="pd-hint">Positive values only — a minus sign won't be accepted.</p>
+
+            <div class="pd-btn-row">
+                <button type="button" class="action-btn secondary-btn pd-small-btn" id="pdSwapBtn" title="Swap V₁ and V₂">⇄ Swap</button>
+                <button type="button" class="action-btn secondary-btn pd-small-btn" id="pdClearBtn" title="Clear both values">✕ Clear</button>
             </div>
 
             <div class="difference-display" id="pd-result-container" style="display: none; margin-top: 20px;">
@@ -1269,6 +1296,20 @@
 
         Object.values(pdInputs).forEach(input => {
             input.addEventListener('input', calculatePd);
+        });
+
+        document.getElementById('pdSwapBtn').addEventListener('click', () => {
+            const temp = pdInputs.v1.value;
+            pdInputs.v1.value = pdInputs.v2.value;
+            pdInputs.v2.value = temp;
+            calculatePd();
+        });
+
+        document.getElementById('pdClearBtn').addEventListener('click', () => {
+            pdInputs.v1.value = '';
+            pdInputs.v2.value = '';
+            pdInputs.v1.focus();
+            calculatePd();
         });
 
         // ================= TAB 5: CD CALCULATOR SCRIPT =================
