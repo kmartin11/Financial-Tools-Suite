@@ -461,6 +461,7 @@
             <button class="tab-btn active" onclick="switchTab('tracker', this)">Goal Tracker</button>
             <button class="tab-btn" onclick="switchTab('growth', this)">Growth Projection</button>
             <button class="tab-btn" onclick="switchTab('percent', this)">Percent Change</button>
+            <button class="tab-btn" onclick="switchTab('percent-diff', this)">Percent Difference</button>
             <button class="tab-btn" onclick="switchTab('cd-calc', this)">CD Calculator</button>
         </div>
 
@@ -629,7 +630,48 @@
             </div>
         </div>
 
-        <!-- ================= TAB 4: CD CALCULATOR ================= -->
+        <!-- ================= TAB 4: PERCENT DIFFERENCE ================= -->
+        <div id="percent-diff" class="tab-content">
+            <p class="pc-subtitle">Calculates the relative difference between two positive numbers compared to their average.</p>
+
+            <div class="input-row">
+                <div class="input-group" style="margin-bottom:0;">
+                    <label for="pd-val1">First Value (V₁)</label>
+                    <input type="text" inputmode="decimal" id="pd-val1" placeholder="e.g. 100" autocomplete="off" class="comma-input" />
+                </div>
+                <div class="input-group" style="margin-bottom:0;">
+                    <label for="pd-val2">Second Value (V₂)</label>
+                    <input type="text" inputmode="decimal" id="pd-val2" placeholder="e.g. 125" autocomplete="off" class="comma-input" />
+                </div>
+            </div>
+
+            <div class="difference-display" id="pd-result-container" style="display: none; margin-top: 20px;">
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Percent Difference</div>
+                <div style="font-size: 2.2rem; font-weight: 800; color: var(--primary); margin-bottom: 12px;" id="pd-diff-percent">0.00%</div>
+                
+                <div class="cd-breakdown" style="text-align: left;">
+                    <div class="cd-breakdown-row">
+                        <span>Absolute Difference (|V₁ &minus; V₂|)</span>
+                        <span id="pd-abs-diff" style="font-weight: 600;">0</span>
+                    </div>
+                    <div class="cd-breakdown-row">
+                        <span>Average / Midpoint ((V₁ + V₂) / 2)</span>
+                        <span id="pd-average" style="font-weight: 600;">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="formula-box">
+                <span>% difference = </span>
+                <div class="fraction">
+                    <div class="numerator">|V₁ &minus; V₂|</div>
+                    <div class="denominator">(V₁ + V₂) / 2</div>
+                </div>
+                <span>&times; 100%</span>
+            </div>
+        </div>
+
+        <!-- ================= TAB 5: CD CALCULATOR ================= -->
         <div id="cd-calc" class="tab-content">
             <div class="cd-calc-grid">
                 <!-- Left Column: Inputs -->
@@ -729,21 +771,41 @@
             btnElement.classList.add('active');
         }
 
-        // --- COMMA FORMATTING (For Tab 1 & 2 Live Typing) ---
+        // --- COMMA FORMATTING ---
         function formatInputWithCommas(event) {
             let input = event.target;
-            let value = input.value.replace(/[^0-9.]/g, '');
+            const originalValue = input.value;
+            const caretPos = input.selectionStart;
+
+            // Count how many "significant" characters (digits/decimal point) sit before the caret,
+            // so we can restore the caret in the right spot after commas are re-inserted/removed.
+            const sigBeforeCaret = originalValue.slice(0, caretPos).replace(/[^0-9.]/g, '').length;
+
+            let value = originalValue.replace(/[^0-9.]/g, '');
             const parts = value.split('.');
             if (parts.length > 2) { value = parts[0] + '.' + parts.slice(1).join(''); }
 
+            let newValue;
             if (value !== '') {
                 const finalParts = value.split('.');
                 let integerPart = finalParts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
                 let decimalPart = finalParts.length > 1 ? '.' + finalParts[1] : '';
-                input.value = integerPart + decimalPart;
+                newValue = integerPart + decimalPart;
             } else {
-                input.value = '';
+                newValue = '';
             }
+            input.value = newValue;
+
+            // Walk the new (formatted) string and find the position right after the same
+            // number of significant characters, so the caret lands where the user expects.
+            let count = 0;
+            let newPos = newValue.length;
+            for (let idx = 0; idx < newValue.length; idx++) {
+                if (/[0-9.]/.test(newValue[idx])) count++;
+                if (count === sigBeforeCaret) { newPos = idx + 1; break; }
+            }
+            if (sigBeforeCaret === 0) newPos = 0;
+            input.setSelectionRange(newPos, newPos);
         }
 
         document.querySelectorAll('.comma-input').forEach(input => {
@@ -763,7 +825,6 @@
             document.getElementById('trackerDateMode').style.display = mode === 'date' ? 'block' : 'none';
             document.getElementById('trackerContribMode').style.display = mode === 'contribution' ? 'block' : 'none';
 
-            // Reset any previously shown results when switching modes
             document.getElementById('progressContainer').style.display = 'none';
             document.getElementById('summary').innerHTML = '';
             document.getElementById('resultTable').style.display = 'none';
@@ -875,13 +936,12 @@
             const freqDays = contribFrequency === 'weekly' ? 7 : (contribFrequency === 'biweekly' ? 14 : (365.25 / 12));
             const freqLabel = contribFrequency === 'weekly' ? 'week' : (contribFrequency === 'biweekly' ? '2 weeks' : 'month');
 
-            // Effective growth applied each period
             const periodRate = Math.pow(1 + (apy / 100), freqDays / 365.25) - 1;
 
             let balance = initialAmount;
             let numberOfContributions = 0;
             let totalContributed = 0;
-            const MAX_PERIODS = 200000; // safety cap
+            const MAX_PERIODS = 200000;
 
             while (balance < targetAmount && numberOfContributions < MAX_PERIODS) {
                 balance += contribAmount;
@@ -894,7 +954,6 @@
                 return alert("This goal isn't reachable in a reasonable time frame with these numbers. Try a larger contribution or a higher rate.");
             }
 
-            // Adjust calendar timeline based on immediate payment (Day 0) logic
             const totalDays = Math.round((numberOfContributions - 1) * freqDays);
             const finalBalance = balance;
             const interestEarned = Math.max(0, finalBalance - initialAmount - totalContributed);
@@ -1053,7 +1112,6 @@
             const originalCanvas = document.getElementById('growthChart');
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             
-            // Render on temporary canvas with a solid background matching the current theme
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = originalCanvas.width;
             tempCanvas.height = originalCanvas.height;
@@ -1116,7 +1174,6 @@
                     const pDec = p / 100;
                     let calculatedInitial = NaN;
                     
-                    // Determine math correctness considering potential negative bounds
                     if (1 + pDec !== 0) {
                         const testPos = f / (1 + pDec);
                         if (testPos >= 0) {
@@ -1134,7 +1191,6 @@
                 } else pcInputs.initial.value = '';
             }
 
-            // Apply highlighting to calculated field
             Object.keys(pcInputs).forEach(key => {
                 if (key === targetField && pcInputs[key].value !== '') {
                     pcInputs[key].classList.add('calculated');
@@ -1143,7 +1199,6 @@
                 }
             });
 
-            // Calculate Difference
             i = parsePcNumber(pcInputs.initial.value);
             f = parsePcNumber(pcInputs.final.value);
             
@@ -1163,7 +1218,7 @@
         }
 
         Object.keys(pcInputs).forEach(key => {
-            pcInputs[key].addEventListener('input', (e) => {
+            pcInputs[key].addEventListener('input', () => {
                 pcEditHistory = pcEditHistory.filter(item => item !== key);
                 pcEditHistory.unshift(key);
                 calculatePc();
@@ -1180,7 +1235,43 @@
             });
         });
 
-        // ================= TAB 4: CD CALCULATOR SCRIPT =================
+        // ================= TAB 4: PERCENT DIFFERENCE SCRIPT =================
+        const pdInputs = {
+            v1: document.getElementById('pd-val1'),
+            v2: document.getElementById('pd-val2')
+        };
+        const pdResultContainer = document.getElementById('pd-result-container');
+        const pdDiffPercent = document.getElementById('pd-diff-percent');
+        const pdAbsDiff = document.getElementById('pd-abs-diff');
+        const pdAverage = document.getElementById('pd-average');
+
+        function calculatePd() {
+            const v1 = parsePcNumber(pdInputs.v1.value);
+            const v2 = parsePcNumber(pdInputs.v2.value);
+
+            if (!isNaN(v1) && !isNaN(v2)) {
+                const absDiff = Math.abs(v1 - v2);
+                const avg = (v1 + v2) / 2;
+
+                if (avg !== 0) {
+                    const pctDiff = (absDiff / Math.abs(avg)) * 100;
+                    pdDiffPercent.textContent = pctDiff.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) + '%';
+                    pdAbsDiff.textContent = absDiff.toLocaleString('en-US', { maximumFractionDigits: 4 });
+                    pdAverage.textContent = avg.toLocaleString('en-US', { maximumFractionDigits: 4 });
+                    pdResultContainer.style.display = 'block';
+                } else {
+                    pdResultContainer.style.display = 'none';
+                }
+            } else {
+                pdResultContainer.style.display = 'none';
+            }
+        }
+
+        Object.values(pdInputs).forEach(input => {
+            input.addEventListener('input', calculatePd);
+        });
+
+        // ================= TAB 5: CD CALCULATOR SCRIPT =================
         let cdPeriodType = 'months';
         let cdChart;
 
@@ -1199,28 +1290,23 @@
 
             const NATIONAL_AVERAGE_APY = 0.993; 
 
-            // Convert period to fractional years
             const t = cdPeriodType === 'months' ? (periodValue / 12) : periodValue;
 
-            // Compound formula: FV = P * (1 + APY/100)^t
             const fv = deposit * Math.pow(1 + (apy / 100), t);
             const earnings = Math.max(0, fv - deposit);
 
             const fvNat = deposit * Math.pow(1 + (NATIONAL_AVERAGE_APY / 100), t);
             const earningsNat = Math.max(0, fvNat - deposit);
 
-            // Display results
             document.getElementById('cdTotalBalance').textContent = fv.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             document.getElementById('cdYourEarnings').textContent = formatCurrency(earnings);
             document.getElementById('cdNatEarnings').textContent = formatCurrency(earningsNat);
             document.getElementById('cdTotalInterest').textContent = formatCurrency(earnings);
 
-            // Handle labels dynamically
             const singularType = cdPeriodType === 'months' ? 'month' : 'year';
             const labelStr = `Interest earned by ${singularType} ${periodValue}:`;
             document.getElementById('cdPeriodLabelText').textContent = labelStr;
 
-            // Generate/Update CD comparison Chart.js
             updateCDChart(deposit, apy, NATIONAL_AVERAGE_APY, periodValue, cdPeriodType);
         }
 
@@ -1321,7 +1407,6 @@
             });
         }
 
-        // Add change events to recalculate CD automatically
         const cdInputElements = ['cdDeposit', 'cdPeriod', 'cdApy'];
         cdInputElements.forEach(id => {
             document.getElementById(id).addEventListener('input', calculateCD);
@@ -1334,7 +1419,6 @@
             document.getElementById('numberOfWeeks').value = '10';
             generateChart();
 
-            // Setup CD default initial values
             document.getElementById('cdDeposit').value = '10,000';
             document.getElementById('cdPeriod').value = '1';
             document.getElementById('cdApy').value = '3.33';
